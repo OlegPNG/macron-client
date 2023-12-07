@@ -4,6 +4,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class AuthMessage(
+    val type: String,
+    @SerialName("session_token")
+    val sessionToken: String
+)
+@Serializable
 data class OutboundMessage(
     val type: String,
     val password: String? = null,
@@ -19,6 +25,8 @@ data class OutboundMessage(
 data class InboundMessage(
     val type: String,
     val error: String? = null,
+    @SerialName("receiver_name")
+    val receiverName: String? = null,
     val receivers: List<String>? = null,
     val functions: List<ReceiverFunction>? = null,
 )

@@ -1,5 +1,6 @@
 package com.beck.macronclient.ui.screens
 
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -18,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.beck.macronclient.ui.theme.MacronClientTheme
 import com.beck.macronclient.viewmodel.MacronViewModel
 import com.beck.macronclient.viewmodel.MockViewModel
 
@@ -25,6 +28,7 @@ import com.beck.macronclient.viewmodel.MockViewModel
 @Composable
 fun LoginScreen(modifier: Modifier = Modifier, viewModel: MacronViewModel, onLogin: () -> Unit = {}) {
     val url = viewModel.url.collectAsState().value
+    val email = viewModel.email.collectAsState().value
     val password = viewModel.password.collectAsState().value
     Box(
         modifier = modifier
@@ -33,11 +37,15 @@ fun LoginScreen(modifier: Modifier = Modifier, viewModel: MacronViewModel, onLog
         contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal=24.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
         ) {
             //Text("Enter the URL")
             TextField(
-                modifier = Modifier.fillMaxWidth().padding(bottom=16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
                 label = { Text("URL") },
                 value = url,
                 onValueChange = viewModel::setUrl,
@@ -45,6 +53,13 @@ fun LoginScreen(modifier: Modifier = Modifier, viewModel: MacronViewModel, onLog
             )
             //Text("Enter your password")
             TextField(
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Email") },
+                value = email,
+                onValueChange = viewModel::setEmail,
+                singleLine = true,
+            )
+            OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Password") },
                 value = password,
@@ -58,7 +73,7 @@ fun LoginScreen(modifier: Modifier = Modifier, viewModel: MacronViewModel, onLog
                 Button(
                     onClick = onLogin,
                     shape = RoundedCornerShape(8.dp),
-                    enabled = !url.equals("")
+                    enabled = url != ""
                 ) {
                     Text("Login")
                 }
@@ -67,9 +82,16 @@ fun LoginScreen(modifier: Modifier = Modifier, viewModel: MacronViewModel, onLog
     }
 }
 
-@Preview(showSystemUi=true)
+@Preview(
+    showSystemUi=true,
+    uiMode = UI_MODE_NIGHT_YES,
+    showBackground = true,
+    backgroundColor = 0xFF232634
+)
 @Composable
 fun PreviewLoginScreen() {
-    val viewModel = MockViewModel()
-    LoginScreen(viewModel = viewModel)
+    MacronClientTheme {
+        val viewModel = MockViewModel()
+        LoginScreen(viewModel = viewModel)
+    }
 }

@@ -32,11 +32,11 @@ fun HomeScreen(
     val status by viewModel.loadingStatus.collectAsState()
     var screenState by remember { mutableStateOf(ScreenState.LOADING) }
     val context = LocalContext.current
-    LaunchedEffect(status) {
-        if (status == ScreenState.SUCCESS) {
-            Toast.makeText(context, "Success...", Toast.LENGTH_SHORT).show()
-        }
-    }
+    //LaunchedEffect(status) {
+    //    if (status == ScreenState.SUCCESS) {
+    //        Toast.makeText(context, "Success...", Toast.LENGTH_SHORT).show()
+    //    }
+    //}
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Macron") })

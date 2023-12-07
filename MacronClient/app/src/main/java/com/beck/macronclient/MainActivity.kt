@@ -14,6 +14,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -27,7 +28,10 @@ import com.beck.macronclient.ui.screens.RegisterScreen
 import com.beck.macronclient.ui.theme.MacronClientTheme
 import com.beck.macronclient.viewmodel.MacronViewModel
 import com.beck.macronclient.viewmodel.MacronViewModelImpl
+import com.beck.macronclient.viewmodel.UiEvent
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import okhttp3.WebSocketListener
 
 private const val USER_CONFIG_NAME = "user_config"
@@ -52,6 +56,16 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     val viewModel = MacronViewModelImpl()
+                    LaunchedEffect(key1 = true) {
+                        viewModel.uiEventFlow.collectLatest {
+                            when(it) {
+                                UiEvent.LOADING -> {}
+                                UiEvent.SUCCESS -> {}
+                                UiEvent.ERROR -> navController.navigate("login")
+                                UiEvent.DISCONNECT -> navController.navigate("home")
+                            }
+                        }
+                    }
                     NavHost(navController, startDestination = "login") {
                         composable("register") {
                             RegisterScreen(

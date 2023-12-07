@@ -50,6 +50,7 @@ fun ReceiverScreen(
                 UiEvent.LOADING -> screenState = ScreenState.LOADING
                 UiEvent.SUCCESS -> screenState = ScreenState.SUCCESS
                 UiEvent.ERROR -> {}
+                UiEvent.DISCONNECT -> {}
             }
         }
     }

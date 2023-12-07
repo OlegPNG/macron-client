@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 
 abstract class MacronViewModel(): ViewModel() {
     abstract val url: StateFlow<String>
+    abstract val email: StateFlow<String>
     abstract val password: StateFlow<String>
 
     abstract val loadingStatus: StateFlow<ScreenState>
@@ -33,6 +34,7 @@ abstract class MacronViewModel(): ViewModel() {
     //abstract val clientStatus: StateFlow<WebsocketStatus>
 
     abstract fun setUrl(url: String)
+    abstract fun setEmail(email: String)
     abstract fun setPassword(password: String)
     abstract fun loginWithPassword()
     abstract fun getReceivers()
@@ -51,7 +53,8 @@ data class ReceiverState(
 enum class UiEvent(msg: String? = null){
     LOADING,
     SUCCESS,
-    ERROR
+    ERROR,
+    DISCONNECT
 }
 enum class ScreenState{
     LOADING,
@@ -60,8 +63,10 @@ enum class ScreenState{
 }
 
 class MacronViewModelImpl(): MacronViewModel() {
-    private val _url = MutableStateFlow("")
+    private val _url = MutableStateFlow("www.macron-app.dev")
     override val url = _url.asStateFlow()
+    private val _email = MutableStateFlow("")
+    override val email = _email.asStateFlow()
     private val _password = MutableStateFlow("")
     override val password = _password.asStateFlow()
 
@@ -83,7 +88,9 @@ class MacronViewModelImpl(): MacronViewModel() {
     override fun setUrl(url: String) {
         _url.value = url
     }
-
+    override fun setEmail(email: String) {
+        _email.value = email
+    }
     override fun setPassword(password: String) {
         _password.value = password
     }
@@ -93,8 +100,8 @@ class MacronViewModelImpl(): MacronViewModel() {
         _loadingStatus.value = ScreenState.LOADING
         viewModelScope.launch {
             val state = sessionManager
-                .startSessionWithPassword(url.value, password.value)
-                .onEach {
+                .startSession(url.value, email.value, password.value)
+                ?.onEach {
                     Log.d("MacronViewModel", "Message: $it")
                     if(it.type == "auth_success") {
                         _loadingStatus.value = ScreenState.SUCCESS
@@ -116,13 +123,23 @@ class MacronViewModelImpl(): MacronViewModel() {
                             functions = it.functions
                         )
                     }
+                    if(it.type == "receiver_disconnect") {
+                        _clientState.value = _clientState.value.copy(
+                            receivers = it.receivers
+                        )
+                        if(it.receiverName == _currentReceiver.value?.name) {
+                            _currentReceiver.value = null
+                            _uiEventFlow.emit(UiEvent.DISCONNECT)
+                        }
+                    }
                 }
-                .catch {
+                ?.catch {
                     Log.e("MacronViewModel", "Error: $it")
                     _loadingStatus.value = ScreenState.ERROR
                     _uiEventFlow.emit(UiEvent.ERROR)
+                    sessionManager.close()
                 }
-                .stateIn(viewModelScope)
+                ?.stateIn(viewModelScope)
         }
 
         viewModelScope.launch {
@@ -138,7 +155,8 @@ class MacronViewModelImpl(): MacronViewModel() {
                     }
                     is SessionState.Error -> {
                         _loadingStatus.value = ScreenState.ERROR
-                        _uiEventFlow.emit(UiEvent.SUCCESS)
+                        _uiEventFlow.emit(UiEvent.ERROR)
+                        //sessionManager.close()
                     }
                 }
             }
@@ -148,10 +166,14 @@ class MacronViewModelImpl(): MacronViewModel() {
 
 
     override fun getReceivers() {
-        _loadingStatus.value = ScreenState.LOADING
-         viewModelScope.launch {
+        viewModelScope.launch {
             //client.requestReceivers()
-            sessionManager.requestReceivers()
+            if(sessionManager.status.value == SessionState.Open) {
+                _loadingStatus.value = ScreenState.LOADING
+                sessionManager.requestReceivers()
+            } else {
+                _uiEventFlow.emit(UiEvent.ERROR)
+            }
         }
     }
 
@@ -171,6 +193,7 @@ class MacronViewModelImpl(): MacronViewModel() {
 
 class MockViewModel: MacronViewModel() {
     override val url: StateFlow<String> = MutableStateFlow("foobar.com")
+    override val email: StateFlow<String> = MutableStateFlow("foo@bar.com")
     override val password: StateFlow<String> = MutableStateFlow("123pass")
     override var loadingStatus: StateFlow<ScreenState> = MutableStateFlow(ScreenState.SUCCESS)
     override val clientState: StateFlow<ClientState> = MutableStateFlow(ClientState(receivers = mockReceivers))
@@ -184,7 +207,9 @@ class MockViewModel: MacronViewModel() {
     override val clientStatus = MutableStateFlow(SessionState.Open)
     override fun setUrl(url: String) {
     }
+    override fun setEmail(email: String) {
 
+    }
     override fun setPassword(password: String) {
     }
 
